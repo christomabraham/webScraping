@@ -1,0 +1,173 @@
+<html lang="en">
+<head>
+  <title>Scrapping</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <style>
+    /* Set height of the grid so .sidenav can be 100% (adjust if needed) */
+    .row.content {height: 1500px}
+    
+    /* Set gray background color and 100% height */
+    .sidenav {
+      background-color: #f1f1f1;
+      height: 100%;
+    }
+    
+    /* Set black background color, white text and some padding */
+    footer {
+      background-color: #555;
+      color: white;
+      padding: 15px;
+    }
+     li>a {
+        font-weight: bold;
+        color: #4C141B;
+    }
+    .active{
+        background-color: black;
+    }
+    p {
+    font-family: "Times New Roman", Times, serif;
+}
+   /* li > a:link,
+    li > a:active,
+    li > a:hover,
+    li > a:visited {
+        font-weight: bold;
+    color: #4C141B;
+    }*/
+    
+    
+    /* On small screens, set height to 'auto' for sidenav and grid */
+    @media screen and (max-width: 767px) {
+      .sidenav {
+        height: auto;
+        padding: 15px;
+      }
+      .row.content {height: auto;} 
+    }
+  </style>
+
+
+<script>
+ var ministers=[];
+function requestCrossDomain( site, callback ) {
+     
+     // If no url was passed, exit.
+     if ( !site ) {
+         alert('No site was passed.');
+         return false;
+     }
+      
+     // Take the provided url, and add it to a YQL query. Make sure you encode it!
+    // var yql = 'http://query.yahooapis.com/v1/public/yql?q=' + encodeURIComponent('select * from html where url="' + site + '"') + '&format=xml&callback=cbFunc';
+     
+var yql = "select * from htmlstring where url='" + site + "' and xpath='//body/section'";
+
+var resturl = "https://query.yahooapis.com/v1/public/yql?q="
+    + encodeURIComponent(yql) + "&format=json"
+    + "&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys";
+     // Request that YSQL string, and run a callback function.
+     // Pass a defined function to prevent cache-busting.
+     $.get( resturl, cbFunc );
+      
+     function cbFunc(data) {
+     if ( data.query.results ) {
+         // Strip out all script tags, for security reasons.
+         // BE VERY CAREFUL. This helps, but we should do more. 
+         //data = data.query.results[0].replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+          
+         // If the user passed a callback, and it
+         // is a function, call it, and send through the data var.
+         if ( typeof callback === 'function') {
+             callback(data.query.results.result);
+         }
+     }
+     // Else, Maybe we requested a site that doesn't exist, and nothing returned.
+     else throw new Error('Nothing returned from getJSON.');
+     }
+ }
+ 
+ requestCrossDomain('https://news.ontario.ca/cabinet/en', function(results) {
+ 
+   $("#container").html(results);
+  
+   $( ".bioCard" ).each(function( index,obj ) {
+    let minister={"name":"","src":"","description":[]};
+    minister.name=$(obj).find("article header h3 a").text();
+    minister.src=$(obj).find("a img").attr("src"); 
+    let roles=  $(obj).find("article p a");
+    for(let count=0;count<roles.length;count++){
+        minister.description.push($(roles[count]).text());   
+    }    
+    ministers.push(minister);    
+}); 
+for(let count=0;count<ministers.length;count++){
+    $("#menu").append(`<li><a href="#" onclick="getDetails(this,${count})">${ministers[count].name}</a></li>`);
+}
+getDetails(null,0); 
+});
+
+
+</script>
+</head>
+<body>
+
+
+    <div class="container-fluid">
+            <div class="row" style="background-color:lavenderblush;border-radius: 5px;padding-left:5%">
+                <h2>Ontario Cabinet Ministers</h2>
+            </div>
+        <div class="row content">
+          <div class="col-sm-3 sidenav">
+            <ul id="menu" class="nav nav-list nav-stacked" style="border:1px solid grey;border-radius: 5px;">
+            </ul><br>
+            <div class="input-group">
+            </div>
+          </div>
+      
+          <div class="col-sm-9">
+                <div class="row content">                       
+                        <div class="col-sm-2"> <img id="personImage" style="border-radius:7px;width:150px;"></div>
+                        <div id="detailedContent" class="col-sm-10"></div>
+<!--
+          <img id="personImage" style="border-radius:7px;">
+           <span id="detailedContent">
+                
+            <span>-->
+          </div>
+        </div>
+      </div>
+      
+      <footer class="container-fluid">
+        <p>Footer Text</p>
+      </footer>
+      
+      </body>
+<div id="container" style="display:none;">
+
+</div>
+
+</body>
+<script>
+   /* $('ul').on("click", "li", function(event) {
+        $("#menu").find("li").removeClass("active");
+       // xxx(this);
+});
+function xxx(obj){
+   // $(obj).addClass('active');
+}*/
+function getDetails(obj,count){
+    $(personImage).attr('src', ministers[count].src);
+    $("#detailedContent").html("");
+    $("#detailedContent").append(`<p style="font-weight: bold; color: #4C141B;">${ministers[count].name}</p>`);
+    for(let count2=0;count2<ministers[count].description.length;count2++){
+        $("#detailedContent").append(`<p style="font-weight: italics; color: grey;">${ministers[count].description[count2]}</p>`);
+    }
+    
+}
+</script>
+</html>
